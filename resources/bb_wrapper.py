@@ -20,6 +20,9 @@ def main():
         bb_task = get_default_task()
         print(f'No bb_task specified, using: {bb_task}')
 
+    # Get any additional task arguments from environment
+    bb_args = os.environ.get('bb_args', '')
+
     # Determine babashka binary based on platform and architecture
     system = platform.system().lower()
     arch = platform.machine().lower()
@@ -39,7 +42,10 @@ def main():
 
     # Run the babashka task
     try:
-        result = subprocess.run([bb_binary, bb_task], check=True)
+        cmd = [bb_binary, bb_task]
+        if bb_args:
+            cmd.extend(bb_args.split())
+        result = subprocess.run(cmd, check=True)
         sys.exit(result.returncode)
     except subprocess.CalledProcessError as e:
         print(f'Error running babashka task: {e}')

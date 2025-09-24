@@ -6,3 +6,8 @@ script = "./bb_wrapper.py"
 name = "bb_task"
 description = "Babashka task to run"
 default = "{{DEFAULT_TASK}}"
+
+[[parameters]]
+name = "bb_args"
+description = "Additional arguments to pass to the babashka task"
+default = ""
