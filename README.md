@@ -25,10 +25,10 @@ tower-setup --app-name "my-app" --default-task "sync" --babashka-version "1.3.19
 Add as a git dependency in your `bb.edn`:
 
 ```clojure
-{:deps {io.github.socksy/bb-tower-deploy {:git/url "https://github.com/socksy/bb-tower-deploy"
-                                          :git/sha "latest-sha-here"}}
- :tasks {:requires ([bb-tower-deploy.core])
-         setup-tower {:task (bb-tower-deploy.core/setup {})}}}
+{:tasks {setup-tower {:requires ([bb-tower-deploy.core])
+                      :task (bb-tower-deploy.core/setup {:app-name "linear-todoist-sync"
+                                                         :default-task "sync"})
+                      :extra-deps {io.github.socksy/bb-tower-deploy {:git/tag "v1" :git/sha "70da9ee"}}}}}
 ```
 
 Then run:
