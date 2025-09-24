@@ -10,4 +10,4 @@ default = "{{DEFAULT_TASK}}"
 [[parameters]]
 name = "bb_args"
 description = "Additional arguments to pass to the babashka task"
-default = ""
+default = "{{DEFAULT_TASK_ARGS}}"

@@ -12,14 +12,15 @@
           template-content
           substitutions))
 
-(defn create-towerfile [{:keys [app-name default-task]}]
+(defn create-towerfile [{:keys [app-name default-task default-task-args]}]
   "Creates a Towerfile with some sensible defaults for babashka projects"
   (when-not (fs/exists? "Towerfile")
     (println "Creating Towerfile...")
     (spit "Towerfile"
           (render-template (slurp (io/resource "Towerfile"))
                           {"{{APP_NAME}}" (or app-name "babashka-app")
-                           "{{DEFAULT_TASK}}" (or default-task "main")}))
+                           "{{DEFAULT_TASK}}" (or default-task "main")
+                           "{{DEFAULT_TASK_ARGS}}" (or default-task-args "")}))
     (println "Towerfile created")))
 
 (defn create-python-wrapper []
@@ -82,4 +83,5 @@
   (let [opts (apply hash-map args)]
     (setup {:app-name (get opts "--app-name")
             :default-task (get opts "--default-task")
+            :default-task-args (get opts "--default-task-args")
             :babashka-version (get opts "--babashka-version")})))
