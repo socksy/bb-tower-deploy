@@ -42,11 +42,15 @@
     (println "Downloading AMD64 binary...")
     (with-open [stream (:body (http/get (str "https://github.com/babashka/babashka/releases/download/v" actual-version "/babashka-" actual-version "-linux-amd64-static.tar.gz") {:as :stream}))]
       (shell {:in stream :dir "bin"} "tar -xz bb"))
+    (when (fs/exists? "bin/bb-linux-amd64")
+      (fs/delete "bin/bb-linux-amd64"))
     (fs/move "bin/bb" "bin/bb-linux-amd64")
 
     (println "Downloading ARM64 binary...")
     (with-open [stream (:body (http/get (str "https://github.com/babashka/babashka/releases/download/v" actual-version "/babashka-" actual-version "-linux-aarch64-static.tar.gz") {:as :stream}))]
       (shell {:in stream :dir "bin"} "tar -xz bb"))
+    (when (fs/exists? "bin/bb-linux-aarch64")
+      (fs/delete "bin/bb-linux-aarch64"))
     (fs/move "bin/bb" "bin/bb-linux-aarch64"))
 
   (println "Babashka binaries downloaded successfully"))
