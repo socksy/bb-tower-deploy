@@ -76,3 +76,10 @@
   (println "1. Customize your Towerfile as needed")
   (println "2. Set bb_task parameter in Tower to specify which task to run")
   (println "3. Deploy with: tower deploy"))
+
+(defn -main [& args]
+  "Main entry point for bbin"
+  (let [opts (apply hash-map args)]
+    (setup {:app-name (get opts "--app-name")
+            :default-task (get opts "--default-task")
+            :babashka-version (get opts "--babashka-version")})))
