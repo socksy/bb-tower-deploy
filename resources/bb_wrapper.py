@@ -4,6 +4,7 @@ import subprocess
 import sys
 import platform
 import glob
+import shutil
 
 def get_default_task():
     """Find the first .bb file in the directory"""
@@ -19,14 +20,22 @@ def main():
         bb_task = get_default_task()
         print(f'No bb_task specified, using: {bb_task}')
 
-    # Determine babashka binary based on architecture
+    # Determine babashka binary based on platform and architecture
+    system = platform.system().lower()
     arch = platform.machine().lower()
-    if arch in ['x86_64', 'amd64']:
-        bb_binary = 'bin/bb-linux-amd64'
-    elif arch in ['aarch64', 'arm64']:
-        bb_binary = 'bin/bb-linux-aarch64'
+
+    if system == 'linux':
+        if arch in ['x86_64', 'amd64']:
+            bb_binary = 'bin/bb-linux-amd64'
+        elif arch in ['aarch64', 'arm64']:
+            bb_binary = 'bin/bb-linux-aarch64'
+        else:
+            raise RuntimeError(f'Unsupported Linux architecture: {arch}')
     else:
-        raise RuntimeError(f'Unsupported architecture: {arch}')
+        # For local development on non-Linux systems, try to use system bb
+        bb_binary = shutil.which('bb')
+        if not bb_binary:
+            raise RuntimeError(f'babashka not found in PATH. Install babashka or run on Linux with the bundled binaries.')
 
     # Run the babashka task
     try:
