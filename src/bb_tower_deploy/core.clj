@@ -1,13 +1,15 @@
 (ns bb-tower-deploy.core
   (:require [babashka.fs :as fs]
             [babashka.process :refer [shell]]
-            [clojure.string :as str]))
+            [babashka.http-client :as http]
+            [clojure.string :as str]
+            [clojure.java.io :as io]))
 
-(defn render-template [template-path substitutions]
-  "Render a template file with given substitutions"
+(defn render-template [template-content substitutions]
+  "Render a template with given substitutions"
   (reduce (fn [content [placeholder value]]
             (str/replace content placeholder value))
-          (slurp template-path)
+          template-content
           substitutions))
 
 (defn create-towerfile [{:keys [app-name default-task]}]
@@ -15,7 +17,7 @@
   (when-not (fs/exists? "Towerfile")
     (println "Creating Towerfile...")
     (spit "Towerfile"
-          (render-template (str (fs/file (fs/parent *file*) ".." ".." "templates" "Towerfile"))
+          (render-template (slurp (io/resource "Towerfile"))
                           {"{{APP_NAME}}" (or app-name "babashka-app")
                            "{{DEFAULT_TASK}}" (or default-task "main")}))
     (println "Towerfile created")))
@@ -24,28 +26,29 @@
   "Creates the Python wrapper script that calls babashka"
   (when-not (fs/exists? "bb_wrapper.py")
     (println "Creating Python wrapper (bb_wrapper.py)...")
-    (spit "bb_wrapper.py"
-          (slurp (str (fs/file (fs/parent *file*) ".." ".." "templates" "bb_wrapper.py"))))
+    (spit "bb_wrapper.py" (slurp (io/resource "bb_wrapper.py")))
     (shell "chmod +x bb_wrapper.py")
     (println "bb_wrapper.py created")))
 
 (defn fetch-babashka-binaries [version]
   "Downloads babashka binaries for Linux AMD64 and ARM64"
   (println (str "Fetching babashka binaries (version: " version ") for Linux deployment..."))
-  (shell "mkdir -p bin")
+  (fs/create-dirs "bin")
 
-  (let [base-url (str "https://github.com/babashka/babashka/releases/" version "/download")]
+  (let [actual-version (if (= version "latest")
+                         (str/trim (:body (http/get "https://raw.githubusercontent.com/babashka/babashka/refs/heads/master/resources/BABASHKA_RELEASED_VERSION")))
+                         version)]
     (println "Downloading AMD64 binary...")
-    (shell (format "curl -L %s/babashka-%s-linux-amd64-static.tar.gz | tar -xz -C bin bb"
-                   base-url version))
-    (shell "mv bin/bb bin/bb-linux-amd64")
+    (with-open [stream (:body (http/get (str "https://github.com/babashka/babashka/releases/download/v" actual-version "/babashka-" actual-version "-linux-amd64-static.tar.gz") {:as :stream}))]
+      (shell {:in stream :dir "bin"} "tar -xz bb"))
+    (fs/move "bin/bb" "bin/bb-linux-amd64")
 
     (println "Downloading ARM64 binary...")
-    (shell (format "curl -L %s/babashka-%s-linux-aarch64-static.tar.gz | tar -xz -C bin bb"
-                   base-url version))
-    (shell "mv bin/bb bin/bb-linux-aarch64")
+    (with-open [stream (:body (http/get (str "https://github.com/babashka/babashka/releases/download/v" actual-version "/babashka-" actual-version "-linux-aarch64-static.tar.gz") {:as :stream}))]
+      (shell {:in stream :dir "bin"} "tar -xz bb"))
+    (fs/move "bin/bb" "bin/bb-linux-aarch64"))
 
-    (println "Babashka binaries downloaded successfully")))
+  (println "Babashka binaries downloaded successfully"))
 
 (defn update-gitignore []
   "Adds babashka binaries to .gitignore"
