@@ -28,7 +28,7 @@ Add as a git dependency in your `bb.edn`:
 {:tasks {setup-tower {:requires ([bb-tower-deploy.core])
                       :task (bb-tower-deploy.core/setup {:app-name "linear-todoist-sync"
                                                          :default-task "sync"})
-                      :extra-deps {io.github.socksy/bb-tower-deploy {:git/tag "v1" :git/sha "70da9ee"}}}}}
+                      :extra-deps {io.github.socksy/bb-tower-deploy {:git/tag "v1" :git/sha "f737fa7"}}}}}
 ```
 
 Then run:
