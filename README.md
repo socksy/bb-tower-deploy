@@ -1,6 +1,8 @@
 # bb-tower-deploy
 
-A babashka library for deploying babashka projects to Tower.
+A tool for deploying your babashka script as a [Tower](https://tower.dev/) app. Tower is meant for Python and data engineers, but why should I let that stop me? Why? Why not? (But also, because I want to schedule a script to run on a schedule without working out how to do that on a VPS or Raspberry Pi...)
+
+Basically, we shim the babashka script by downloading the statically linked binary, and creating a Python script wrapper around it that simply calls it with the arguments provided (passed in via the tower `[[parameters]]`). Then, you can deploy the app and it will upload all of that in a bundle, none the wiser that you actually passed it Clojure code 😈.
 
 ## Usage
 
@@ -65,3 +67,22 @@ uvx tower deploy
 ```
 
 You can (and should!) set the `bb_task` parameter in Tower to specify which babashka task to run.
+
+## Limitations
+
+### No deps
+Because the Tower runners don't have java installed, you can't put anything in `:deps`, since [babashka.deps](https://book.babashka.org/#babashkadeps) has java as a prerequisite :( Theoretically, perhaps tools-deps-native could solve this (@borkdude linked me [this](https://github.com/babashka/pod-registry/blob/master/examples/tools-deps-native.clj) example script using a native build as a pod) but I haven't tried it (and it would necessarily be kinda hacky. For tasks that you don't need to run on the tower production, it's best to use `:extra-deps` on the task itself (see the example of how to add the setup-tower task of this repo to your bb.edn!).
+
+### Long upload times
+Since we're shipping the entire statically linked babashka, which is a graalvm image so presumably has the entire JVM inside of it, we end up having quite a large bundle we need to deploy to Tower. Which at least for me, takes a long time --- I'm presuming because it's being encrypted on the fly. Or perhaps my internet just sucks? Either way, one way to reduce the bundle size would be to only upload the amd64 babashka binary. For now, it's the only type of runner available anyway. You can specify exactly what you want to upload to `source` in the Towerfile (see the [Towerfile docs](https://docs.tower.dev/docs/reference/towerfile)). You'll need at least the following:
+
+```
+source = [
+    "bb.edn",
+    "bin/bb-linux-amd64",
+    "bb_wrapper.py"
+    "your_babashka_script.bb"
+    # also possible:
+    # src/**/*.clj
+]
+```
