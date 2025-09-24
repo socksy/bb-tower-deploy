@@ -1,0 +1,5 @@
+{:paths ["src"]
+ :tasks {setup-tower {:doc "Setup Tower deployment (creates Towerfile, Python wrapper, fetches babashka binaries)"
+                     :task (bb-tower-deploy.core/setup-tower-deployment {})}
+         fetch-bb {:doc "Fetch babashka binaries for Linux deployment only"
+                   :task (bb-tower-deploy.core/fetch-babashka-binaries "latest")}}}

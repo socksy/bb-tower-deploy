@@ -1,0 +1,75 @@
+(ns bb-tower-deploy.core
+  (:require [babashka.fs :as fs]
+            [babashka.process :refer [shell]]
+            [clojure.string :as str]))
+
+(defn render-template [template-path substitutions]
+  "Render a template file with given substitutions"
+  (reduce (fn [content [placeholder value]]
+            (str/replace content placeholder value))
+          (slurp template-path)
+          substitutions))
+
+(defn create-towerfile [{:keys [app-name default-task]}]
+  "Creates a Towerfile with some sensible defaults for babashka projects"
+  (when-not (fs/exists? "Towerfile")
+    (println "Creating Towerfile...")
+    (spit "Towerfile"
+          (render-template (str (fs/file (fs/parent *file*) ".." ".." "templates" "Towerfile"))
+                          {"{{APP_NAME}}" (or app-name "babashka-app")
+                           "{{DEFAULT_TASK}}" (or default-task "main")}))
+    (println "Towerfile created")))
+
+(defn create-python-wrapper []
+  "Creates the Python wrapper script that calls babashka"
+  (when-not (fs/exists? "bb_wrapper.py")
+    (println "Creating Python wrapper (bb_wrapper.py)...")
+    (spit "bb_wrapper.py"
+          (slurp (str (fs/file (fs/parent *file*) ".." ".." "templates" "bb_wrapper.py"))))
+    (shell "chmod +x bb_wrapper.py")
+    (println "bb_wrapper.py created")))
+
+(defn fetch-babashka-binaries [version]
+  "Downloads babashka binaries for Linux AMD64 and ARM64"
+  (println (str "Fetching babashka binaries (version: " version ") for Linux deployment..."))
+  (shell "mkdir -p bin")
+
+  (let [base-url (str "https://github.com/babashka/babashka/releases/" version "/download")]
+    (println "Downloading AMD64 binary...")
+    (shell (format "curl -L %s/babashka-%s-linux-amd64-static.tar.gz | tar -xz -C bin bb"
+                   base-url version))
+    (shell "mv bin/bb bin/bb-linux-amd64")
+
+    (println "Downloading ARM64 binary...")
+    (shell (format "curl -L %s/babashka-%s-linux-aarch64-static.tar.gz | tar -xz -C bin bb"
+                   base-url version))
+    (shell "mv bin/bb bin/bb-linux-aarch64")
+
+    (println "Babashka binaries downloaded successfully")))
+
+(defn update-gitignore []
+  "Adds babashka binaries to .gitignore"
+  (when (fs/exists? ".gitignore")
+    (let [current-content (slurp ".gitignore")
+          entries ["bin/bb-linux-amd64" "bin/bb-linux-aarch64"]
+          missing-entries (filter #(not (str/includes? current-content %)) entries)]
+      (when (seq missing-entries)
+        (println "Updating .gitignore...")
+        (spit ".gitignore"
+              (str current-content
+                   (when-not (str/ends-with? current-content "\n") "\n")
+                   (str/join "\n" missing-entries) "\n"))
+        (println ".gitignore updated")))))
+
+(defn setup [{:keys [babashka-version] :as opts}]
+  "Sets up everything needed for Tower deployment"
+  (println "Setting up Tower deployment for babashka project...")
+  (create-towerfile opts)
+  (create-python-wrapper)
+  (fetch-babashka-binaries (or babashka-version "latest"))
+  (update-gitignore)
+  (println "\nTower deployment setup complete!")
+  (println "\nNext steps:")
+  (println "1. Customize your Towerfile as needed")
+  (println "2. Set bb_task parameter in Tower to specify which task to run")
+  (println "3. Deploy with: tower deploy"))

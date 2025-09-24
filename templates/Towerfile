@@ -1,0 +1,8 @@
+[app]
+name = "{{APP_NAME}}"
+script = "./bb_wrapper.py"
+
+[[parameters]]
+name = "bb_task"
+description = "Babashka task to run"
+default = "{{DEFAULT_TASK}}"
