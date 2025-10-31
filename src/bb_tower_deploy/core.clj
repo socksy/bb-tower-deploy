@@ -32,26 +32,40 @@
     (println "bb_wrapper.py created")))
 
 (defn fetch-babashka-binaries [version]
-  "Downloads babashka binaries for Linux AMD64 and ARM64"
-  (println (str "Fetching babashka binaries (version: " version ") for Linux deployment..."))
+  "Downloads babashka binaries for Linux and macOS (AMD64 and ARM64)"
+  (println (str "Fetching babashka binaries (version: " version ")..."))
   (fs/create-dirs "bin")
 
   (let [actual-version (if (= version "latest")
                          (str/trim (:body (http/get "https://raw.githubusercontent.com/babashka/babashka/refs/heads/master/resources/BABASHKA_RELEASED_VERSION")))
                          version)]
-    (println "Downloading AMD64 binary...")
+    (println "Downloading Linux AMD64 binary...")
     (with-open [stream (:body (http/get (str "https://github.com/babashka/babashka/releases/download/v" actual-version "/babashka-" actual-version "-linux-amd64-static.tar.gz") {:as :stream}))]
       (shell {:in stream :dir "bin"} "tar -xz bb"))
     (when (fs/exists? "bin/bb-linux-amd64")
       (fs/delete "bin/bb-linux-amd64"))
     (fs/move "bin/bb" "bin/bb-linux-amd64")
 
-    (println "Downloading ARM64 binary...")
+    (println "Downloading Linux ARM64 binary...")
     (with-open [stream (:body (http/get (str "https://github.com/babashka/babashka/releases/download/v" actual-version "/babashka-" actual-version "-linux-aarch64-static.tar.gz") {:as :stream}))]
       (shell {:in stream :dir "bin"} "tar -xz bb"))
     (when (fs/exists? "bin/bb-linux-aarch64")
       (fs/delete "bin/bb-linux-aarch64"))
-    (fs/move "bin/bb" "bin/bb-linux-aarch64"))
+    (fs/move "bin/bb" "bin/bb-linux-aarch64")
+
+    (println "Downloading macOS AMD64 binary...")
+    (with-open [stream (:body (http/get (str "https://github.com/babashka/babashka/releases/download/v" actual-version "/babashka-" actual-version "-macos-amd64.tar.gz") {:as :stream}))]
+      (shell {:in stream :dir "bin"} "tar -xz bb"))
+    (when (fs/exists? "bin/bb-macos-amd64")
+      (fs/delete "bin/bb-macos-amd64"))
+    (fs/move "bin/bb" "bin/bb-macos-amd64")
+
+    (println "Downloading macOS ARM64 binary...")
+    (with-open [stream (:body (http/get (str "https://github.com/babashka/babashka/releases/download/v" actual-version "/babashka-" actual-version "-macos-aarch64.tar.gz") {:as :stream}))]
+      (shell {:in stream :dir "bin"} "tar -xz bb"))
+    (when (fs/exists? "bin/bb-macos-aarch64")
+      (fs/delete "bin/bb-macos-aarch64"))
+    (fs/move "bin/bb" "bin/bb-macos-aarch64"))
 
   (println "Babashka binaries downloaded successfully"))
 
@@ -59,7 +73,7 @@
   "Adds babashka binaries to .gitignore"
   (when (fs/exists? ".gitignore")
     (let [current-content (slurp ".gitignore")
-          entries ["bin/bb-linux-amd64" "bin/bb-linux-aarch64"]
+          entries ["bin/bb-linux-amd64" "bin/bb-linux-aarch64" "bin/bb-macos-amd64" "bin/bb-macos-aarch64"]
           missing-entries (filter #(not (str/includes? current-content %)) entries)]
       (when (seq missing-entries)
         (println "Updating .gitignore...")
