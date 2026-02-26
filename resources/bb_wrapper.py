@@ -6,7 +6,7 @@ import sys
 import tarfile
 import urllib.request
 
-BB_VERSION = "{{BB_VERSION}}"
+BB_VERSION = "{{bb-version}}"
 
 
 def get_bb_binary():
@@ -46,6 +46,8 @@ def main():
     bb_args = os.environ.get("bb_args", "")
 
     bb_binary = get_bb_binary()
+
+    subprocess.run([sys.executable, "-m", "pip", "install", "-q", "."], check=True)
 
     cmd = [bb_binary, bb_task]
     if bb_args:

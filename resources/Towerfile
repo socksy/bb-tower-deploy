@@ -1,13 +1,13 @@
 [app]
-name = "{{APP_NAME}}"
+name = "{{app-name}}"
 script = "./bb_wrapper.py"
 
 [[parameters]]
 name = "bb_task"
 description = "Babashka task to run"
-default = "{{DEFAULT_TASK}}"
+default = "{{default-task}}"
 
 [[parameters]]
 name = "bb_args"
 description = "Additional arguments to pass to the babashka task"
-default = "{{DEFAULT_TASK_ARGS}}"
+default = "{{default-task-args}}"
