@@ -1,6 +1,4 @@
 {:paths ["src" "resources"]
  :bbin/bin {tower-setup {:main-opts ["-m" "bb-tower-deploy.core"]}}
- :tasks {setup-tower {:doc "Setup Tower deployment (creates Towerfile, Python wrapper, fetches babashka binaries)"
-                     :task (bb-tower-deploy.core/setup {})}
-         fetch-bb {:doc "Fetch babashka binaries for Linux deployment only"
-                   :task (bb-tower-deploy.core/fetch-babashka-binaries "latest")}}}
+ :tasks {setup-tower {:doc "Setup Tower deployment (creates Towerfile and Python wrapper)"
+                     :task (bb-tower-deploy.core/setup {})}}}
